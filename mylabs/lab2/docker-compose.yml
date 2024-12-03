@@ -1,0 +1,67 @@
+version: '3.9'
+services:
+  # Apache APISIX API Gateway
+  apisix:
+    image: apache/apisix:latest
+    environment:
+      - API_SERVER_ETCD=http://etcd:2379
+    ports:
+      - "9080:9080"
+      - "9443:9443"
+      - "9091:9091"
+    depends_on:
+      - etcd
+    networks:
+      - serverless_network
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+
+  # ETCD (Configuration Store for APISIX)
+  etcd:
+    image: bitnami/etcd:latest
+    environment:
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+      - ALLOW_NONE_AUTHENTICATION=yes
+    ports:
+      - "2379:2379"
+    networks:
+      - serverless_network
+
+  # OpenFaaS Gateway
+  gateway:
+    image: openfaas/gateway:t6
+    ports:
+      - "8080:8080"
+    environment:
+      - gateway_functions_provider_url=http://faas-swarm:8080/
+    networks:
+      - serverless_network
+   
+  # Image Processing Function
+  image-processor:
+    build: 
+      context: ./functions/image-processor
+    image: image-processor:latest
+    networks:
+      - serverless_network
+
+  # MinIO Object Storage
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    networks:
+      - serverless_network
+
+
+
+networks:
+  serverless_network:
+    driver: bridge

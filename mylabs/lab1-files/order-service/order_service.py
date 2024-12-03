@@ -6,8 +6,9 @@ app = FastAPI()
 # Simulated database for orders
 orders = []
 
-# URL for the Product Service
-PRODUCT_SERVICE_URL = "http://product-service.default.svc.cluster.local:80/products"
+# URL for the Product Service locally
+PRODUCT_SERVICE_URL = "http://product-service.default.svc.cluster.local/products"
+
 
 @app.post("/orders")
 def create_order(product_id: int, quantity: int):
